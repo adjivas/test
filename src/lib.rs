@@ -1,0 +1,3 @@
+/// Homu
+pub fn homu() {
+}
