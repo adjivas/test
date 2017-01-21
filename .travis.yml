@@ -1,30 +1,20 @@
-language: rust
-sudo: false
 
-# run builds for all the trains (and more)
+language: rust
 rust:
   - nightly
-
-# load travis-cargo
+  - beta
 before_script:
-  - |
-      pip install 'travis-cargo<0.2' --user &&
-      export PATH=$HOME/.local/bin:$PATH
-# the main build
+  - git clone --depth 1 https://github.com/huonw/travis-cargo
+  - ln -s ./travis-cargo/travis-cargo.py tc
 script:
   - |
-      travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo bench &&
-      travis-cargo doc -- --features doc
+      ./tc cargo build &&
+      ./tc cargo test &&
+      ./tc cargo bench &&
+      tc cargo doc
 after_success:
-  # upload the documentation from the build with stable (automatically only actually
-  # runs on the master branch, not individual PRs)
-  - travis-cargo --only nightly doc-upload
+  - ./tc --only beta doc-upload
 
 env:
   global:
-    # override the default `--features unstable` used for the nightly branch (optional)
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
-    # encrypted github token for doc upload (see `GH_TOKEN` link above)
     - secure: bfAQ/AiBKXrRsiKkHnsTAYWFpUhKm7E7bqwhrDgxF/tcdWjkT/E/RoRD42otBBgUnFKjkw+5NwgwJs0wICeTjvxL48yNh79EshwHnKb3aOvZddOoSqBkaKK49WaDoZ8XSZceMvjUXsa+YGe3R2eNwDlenTzxcdk+4kMjFJlfva3FHqZOapbEPgftYV6f68fTRd0M70XbYq/YC4VCiqomYz71OdN+gyuTgDq5QgC5ecHXign1bTx5ttc8yw7e0l5ZXvI5pDEN8UZtPwSq+EqK/yz4C3kMSaIFKtYqiXDYZCD37ENxHFd0jmm0SD1YrqHVrgWhvwreEauhbeUdC/XVvFs0YTZKiGi/LtnT8XPmqlOFXF5uC5L9qVqQrGCLfBkmyOsKiDfDxHB8xFwwX+yU1bSNK9OlwHvx8P9aZJ5V5aJ8KBRWo4aDlrOEUftp8Sqa/TgCjQePCG/TKfkdg3He/BFH7hScSJVH+Wzhiq2O4+Tyhn/YCnger1Y95MW6/JYJgvlqfSWp5qY0Vy1NZY/hJE4r56KNGSa2rKNK/K2y0jRpBp7rNJteR8sr61xk8QK1esVhUedYtvUq5T1jIlg78iKCTESrXL0uzf3tssRy4+ZizZkgz9vwzjbxAtTaDEOHHbpFqZleycTAClTehjhP8XHkpgDToFPRvoOXkZJ3bnU=
