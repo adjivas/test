@@ -1,20 +1,14 @@
-
 language: rust
 rust:
-  - nightly
-  - beta
+  - stable
 before_script:
-  - git clone --depth 1 https://github.com/huonw/travis-cargo
-  - ln -s ./travis-cargo/travis-cargo.py tc
+- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
-  - |
-      ./tc cargo build &&
-      ./tc cargo test &&
-      ./tc cargo bench &&
-      tc cargo doc
+  - travis-cargo build
+  - travis-cargo test
+  - travis-cargo doc
 after_success:
-  - ./tc --only beta doc-upload
-
+  - travis-cargo doc-upload
 env:
   global:
     - secure: bfAQ/AiBKXrRsiKkHnsTAYWFpUhKm7E7bqwhrDgxF/tcdWjkT/E/RoRD42otBBgUnFKjkw+5NwgwJs0wICeTjvxL48yNh79EshwHnKb3aOvZddOoSqBkaKK49WaDoZ8XSZceMvjUXsa+YGe3R2eNwDlenTzxcdk+4kMjFJlfva3FHqZOapbEPgftYV6f68fTRd0M70XbYq/YC4VCiqomYz71OdN+gyuTgDq5QgC5ecHXign1bTx5ttc8yw7e0l5ZXvI5pDEN8UZtPwSq+EqK/yz4C3kMSaIFKtYqiXDYZCD37ENxHFd0jmm0SD1YrqHVrgWhvwreEauhbeUdC/XVvFs0YTZKiGi/LtnT8XPmqlOFXF5uC5L9qVqQrGCLfBkmyOsKiDfDxHB8xFwwX+yU1bSNK9OlwHvx8P9aZJ5V5aJ8KBRWo4aDlrOEUftp8Sqa/TgCjQePCG/TKfkdg3He/BFH7hScSJVH+Wzhiq2O4+Tyhn/YCnger1Y95MW6/JYJgvlqfSWp5qY0Vy1NZY/hJE4r56KNGSa2rKNK/K2y0jRpBp7rNJteR8sr61xk8QK1esVhUedYtvUq5T1jIlg78iKCTESrXL0uzf3tssRy4+ZizZkgz9vwzjbxAtTaDEOHHbpFqZleycTAClTehjhP8XHkpgDToFPRvoOXkZJ3bnU=
