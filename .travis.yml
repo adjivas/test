@@ -1,14 +1,124 @@
+# Based on the "trust" template v0.1.1
+# https://github.com/japaric/trust/tree/v0.1.1
+
+dist: trusty
 language: rust
-rust:
-  - stable
+services: docker
+sudo: required
+
+# TODO This is the Rust channel that build jobs will use by default but can be
+# overridden on a case by case basis down below
+rust: nightly
+
+env:
+  global:
+    # TODO Update this to match the name of your project.
+    - CRATE_NAME=minrs
+
+    # default job
+    - TARGET=x86_64-unknown-linux-gnu
+
+matrix:
+  # TODO These are all the build jobs. Adjust as necessary. Comment out what you
+  # don't need
+  include:
+    # Linux
+    - env: TARGET=i686-unknown-linux-gnu
+    - env: TARGET=i686-unknown-linux-musl
+    # - env: TARGET=x86_64-unknown-linux-gnu  # this is the default job
+    - env: TARGET=x86_64-unknown-linux-musl
+
+    # OSX
+    - env: TARGET=i686-apple-darwin
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+    # *BSD
+    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
+
+    # Other architectures
+    - env: TARGET=aarch64-unknown-linux-gnu
+    - env: TARGET=armv7-unknown-linux-gnueabihf
+    - env: TARGET=mips-unknown-linux-gnu
+    - env: TARGET=mips64-unknown-linux-gnuabi64
+    - env: TARGET=mips64el-unknown-linux-gnuabi64
+    - env: TARGET=mipsel-unknown-linux-gnu
+    - env: TARGET=powerpc-unknown-linux-gnu
+    - env: TARGET=powerpc64-unknown-linux-gnu
+    - env: TARGET=powerpc64le-unknown-linux-gnu
+    - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
+
+    # Testing other channels
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
+    - env: TARGET=i686-apple-darwin
+      os: osx
+      rust: nightly
+
+  allow_failures:
+    - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
+    - env: TARGET=i686-apple-darwin
+
+before_deploy:
+  - set -e
+  - sh ci/before_deploy.sh
+
 before_script:
-- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+
+install:
+  - set -e
+  - sh ci/install.sh
+  - source ~/.cargo/env || true
+
 script:
+  - set -e
+  - bash ci/script.sh
   - travis-cargo build
   - travis-cargo test
   - travis-cargo doc
+
+after_script: set +e
+
 after_success:
   - travis-cargo doc-upload
-env:
-  global:
+
+deploy:
+  # TODO update `api_key.secure`
+  # - Create a `public_repo` GitHub token. Go to: https://github.com/settings/tokens/new
+  # - Encrypt it: `travis encrypt GH_TOKEN=0123456789012345678901234567890123456789`
+  # - Paste the output down here
+  api_key:
     - secure: bfAQ/AiBKXrRsiKkHnsTAYWFpUhKm7E7bqwhrDgxF/tcdWjkT/E/RoRD42otBBgUnFKjkw+5NwgwJs0wICeTjvxL48yNh79EshwHnKb3aOvZddOoSqBkaKK49WaDoZ8XSZceMvjUXsa+YGe3R2eNwDlenTzxcdk+4kMjFJlfva3FHqZOapbEPgftYV6f68fTRd0M70XbYq/YC4VCiqomYz71OdN+gyuTgDq5QgC5ecHXign1bTx5ttc8yw7e0l5ZXvI5pDEN8UZtPwSq+EqK/yz4C3kMSaIFKtYqiXDYZCD37ENxHFd0jmm0SD1YrqHVrgWhvwreEauhbeUdC/XVvFs0YTZKiGi/LtnT8XPmqlOFXF5uC5L9qVqQrGCLfBkmyOsKiDfDxHB8xFwwX+yU1bSNK9OlwHvx8P9aZJ5V5aJ8KBRWo4aDlrOEUftp8Sqa/TgCjQePCG/TKfkdg3He/BFH7hScSJVH+Wzhiq2O4+Tyhn/YCnger1Y95MW6/JYJgvlqfSWp5qY0Vy1NZY/hJE4r56KNGSa2rKNK/K2y0jRpBp7rNJteR8sr61xk8QK1esVhUedYtvUq5T1jIlg78iKCTESrXL0uzf3tssRy4+ZizZkgz9vwzjbxAtTaDEOHHbpFqZleycTAClTehjhP8XHkpgDToFPRvoOXkZJ3bnU=
+  file_glob: true
+  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
+  on:
+    # TODO Here you can pick which targets will generate binary releases
+    # In this example, there are some targets that are tested using the nightly
+    # and nightly channels. This condition makes sure there is only one release
+    # for such targets and that's generated using the nightly channel
+    condition: $TRAVIS_RUST_VERSION = nightly
+    tags: true
+  provider: releases
+  skip_cleanup: true
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: never
